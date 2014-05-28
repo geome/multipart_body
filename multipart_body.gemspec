@@ -13,4 +13,9 @@ Gem::Specification.new do |s|
   s.require_path = 'lib'
   s.files = %w(readme.md) + Dir.glob("lib/**/*")
   s.test_files = Dir.glob("test/*")
+
+  s.add_development_dependency "bundler"
+  s.add_development_dependency "rake"
+  s.add_development_dependency "minitest"
+  s.add_development_dependency "shoulda"
 end
