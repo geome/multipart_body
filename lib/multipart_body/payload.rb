@@ -21,7 +21,9 @@ module MultipartBody
     end
 
     def to_s
-      output = "--#{@boundary}\r\n"
+      output = "MIME-Version: 1.0\r\n"
+      output << "Content-Type: multipart/mixed; boundary=\"#{@boundary}\"\r\n\r\n"
+      output << "--#{@boundary}\r\n"
       output << @parts.join("\r\n--#{@boundary}\r\n")
       output << "\r\n--#{@boundary}--"
     end

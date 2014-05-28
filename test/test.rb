@@ -25,53 +25,67 @@ class MultipartBodyTest < MiniTest::Test
       assert_equal @hash, Hash[multipart.parts.map{|part| [part.name, part.body] }]
     end
 
-    should "add to the list of parts when sent #new with a hash" do
-      multipart = MultipartBody::Payload.new(@hash)
-      assert_equal @hash, Hash[multipart.parts.map{|part| [part.name, part.body] }]
-    end
+    context "Payload" do
 
-    should "correctly add parts sent #new with parts" do
-      multipart = MultipartBody::Payload.new(@parts)
-      assert_same_elements @parts, multipart.parts
-    end
+      should "add to the list of parts when sent #new with a hash" do
+        multipart = MultipartBody::Payload.new(@hash)
+        assert_equal @hash, Hash[multipart.parts.map{|part| [part.name, part.body] }]
+      end
 
-    should "assign a boundary if it is not given" do
-      multipart = MultipartBody::Payload.new()
-      assert_match /[\w\d-]{10,}/, multipart.boundary
-    end
+      should "correctly add parts sent #new with parts" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_same_elements @parts, multipart.parts
+      end
 
-    should "use the boundary provided if given" do
-      multipart = MultipartBody::Payload.new(nil, "my-boundary")
-      assert_equal "my-boundary", multipart.boundary
-    end
+      should "assign a boundary if it is not given" do
+        multipart = MultipartBody::Payload.new()
+        assert_match /[\w\d-]{10,}/, multipart.boundary
+      end
 
-    should "starts with a boundary when sent #to_s" do
-      multipart = MultipartBody::Payload.new(@parts)
-      assert_match /^--#{multipart.boundary}/i, multipart.to_s
-    end
+      should "use the boundary provided if given" do
+        multipart = MultipartBody::Payload.new(nil, "my-boundary")
+        assert_equal "my-boundary", multipart.boundary
+      end
 
-    should "end with a boundary when sent #to_s" do
-      multipart = MultipartBody::Payload.new(@parts)
-      assert_match /--#{multipart.boundary}--\z/i, multipart.to_s
-    end
+      should "start with a mime version declaration" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_match %r{^MIME-Version: 1.0\r\n}, multipart.to_s
+      end
 
-    should "contain the parts joined by a boundary when sent #to_s" do
-      multipart = MultipartBody::Payload.new(@parts)
-      assert_match multipart.parts.join("\r\n--#{multipart.boundary}\r\n"), multipart.to_s
-    end
+      should "declare a content type and boundary" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_match "Content-Type: multipart/mixed; boundary=\"#{multipart.boundary}\"",
+                     multipart.to_s
+      end
 
-    should "contrsuct a valid multipart text when passed #to_s" do
-      multipart = MultipartBody::Payload.new(@parts)
-      multipart.boundary = '----multipart-boundary-307380'
-      assert_equal @example_text, multipart.to_s
-    end
+      should "start each part with a boundary when sent #to_s" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_match /\r\n--#{multipart.boundary}/i, multipart.to_s
+      end
 
-    should "construct a file part when create from hash" do
-      multipart = MultipartBody::Payload.new(:test => @file)
-      multipart.boundary = '----multipart-boundary-672923'
-      assert_equal 'hello', multipart.parts.first.body
-      refute_nil multipart.parts.first.filename
-      assert_match /------multipart-boundary-672923\r\nContent-Disposition: form-data; name=\"test\"; filename=\".*"\r\n\r\nhello\r\n------multipart-boundary-672923--/, multipart.to_s
+      should "end with a boundary when sent #to_s" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_match /--#{multipart.boundary}--\z/i, multipart.to_s
+      end
+
+      should "contain the parts joined by a boundary when sent #to_s" do
+        multipart = MultipartBody::Payload.new(@parts)
+        assert_match multipart.parts.join("\r\n--#{multipart.boundary}\r\n"), multipart.to_s
+      end
+
+      should "construct a valid multipart text when passed #to_s" do
+        multipart = MultipartBody::Payload.new(@parts)
+        multipart.boundary = '----multipart-boundary-307380'
+        assert_match @example_text, multipart.to_s
+      end
+
+      should "construct a file part when create from hash" do
+        multipart = MultipartBody::Payload.new(:test => @file)
+        multipart.boundary = '----multipart-boundary-672923'
+        assert_equal 'hello', multipart.parts.first.body
+        refute_nil multipart.parts.first.filename
+        assert_match /------multipart-boundary-672923\r\nContent-Disposition: form-data; name=\"test\"; filename=\".*"\r\n\r\nhello\r\n------multipart-boundary-672923--/, multipart.to_s
+      end
     end
   end
 
